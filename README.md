@@ -12,3 +12,13 @@ exactas y el resultado debe ser entero no negativo (por ejemplo, 2^(6/2)).
 Las potencias se asocian a la derecha y preceden al menos unario. Se adopta
 0^0 = 1, conforme a pow de Python. No se acepta multiplicación implícita ni + unario.
 Las potencias modulares usan pow con tres argumentos.
+
+## Demo
+
+### Vista principal de la calculadora
+
+![Vista principal de la calculadora](assets/vista_calc.png)
+
+### Ejemplo de evaluación de una expresión
+
+![Ejemplo de evaluación de una expresión](assets/vista_calc_expresion.png)

@@ -24,6 +24,16 @@ class FormatearProcedimiento:
                 indice += 2
                 continue
             if paso.tipo == "reduccion":
+                reducciones = [paso] if paso.izquierdo != paso.resultado else []
+                while indice < len(evaluacion.pasos) and evaluacion.pasos[indice].tipo == "reduccion":
+                    siguiente = evaluacion.pasos[indice]
+                    if siguiente.izquierdo != siguiente.resultado:
+                        reducciones.append(siguiente)
+                    indice += 1
+                if reducciones:
+                    titulo = "Reducción" if len(reducciones) == 1 else "Reducciones"
+                    lineas = "\n".join(self.formatear_paso(reduccion) for reduccion in reducciones)
+                    bloques.append(f"{titulo} módulo {paso.modulo}:\n{lineas}")
                 continue
             contenido = self.formatear_paso(paso)
             if paso.tipo == "exponente":
@@ -42,7 +52,7 @@ class FormatearProcedimiento:
         if paso.tipo == "exponente":
             return f"Exponente utilizado: {resultado}"
         if paso.tipo == "reduccion":
-            return ""
+            return f"{a} ≡ {resultado} (mod {modulo})" if a != resultado else ""
         if paso.tipo == "dividir" and modulo is not None:
             return (f"Entonces:\n{a} / {b}\n≡ {a} * {paso.divisor_reducido}^(-1)\n"
                     f"≡ {a} * {paso.inverso}\n≡ {resultado} (mod {modulo})")
