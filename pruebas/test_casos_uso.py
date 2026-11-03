@@ -12,4 +12,4 @@ class PruebasCasosUso(unittest.TestCase):
         ]
         for expresion, modulo, esperado in ejemplos:
             with self.subTest(expresion=expresion):
-                self.assertEqual(EvaluarExpresionModular().ejecutar(expresion, modulo), esperado)
+                self.assertEqual(EvaluarExpresionModular().ejecutar(expresion, modulo).resultado, esperado)

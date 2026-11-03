@@ -9,7 +9,7 @@ class PruebasExpresiones(unittest.TestCase):
                 ('2^3^2', 1), ('-2^2', 3), ('(-2)^2', 4), ('3-8', 2),
                 ('5*-2', 4), ('7    +    5', 5), ('2^(8-7)', 2)]:
             with self.subTest(expresion=expresion):
-                self.assertEqual(caso.ejecutar(expresion, 7), esperado)
+                self.assertEqual(caso.ejecutar(expresion, 7).resultado, esperado)
         for expresion in ('2^-3', '2^(2-5)', '2^(3/2)', '2^(1/0)'):
             with self.subTest(expresion=expresion), self.assertRaises(ErrorExponenteInvalido):
                 caso.ejecutar(expresion, 7)

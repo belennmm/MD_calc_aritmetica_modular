@@ -6,6 +6,7 @@ negativo. El resto del árbol usa exclusivamente operaciones del dominio.
 """
 from dataclasses import dataclass
 from fractions import Fraction
+from dominio.paso_calculo import PasoCalculo
 from dominio.aritmetica_modular import AritmeticaModular
 from dominio.excepciones_dominio import (
     ErrorExpresionInvalida, ErrorParentesisDesbalanceados,
@@ -22,6 +23,7 @@ class Nodo:
 
 class AnalizadorSintactico:
     def evaluar(self, tokens: list[Token], aritmetica: AritmeticaModular) -> int:
+        self.pasos = aritmetica.pasos
         self.tokens, self.posicion = tokens, 0
         balance = 0
         for token in tokens:
@@ -96,21 +98,32 @@ class AnalizadorSintactico:
             raise ErrorExponenteInvalido("El exponente debe ser un número entero no negativo.") from None
         if valor.denominator != 1 or valor < 0:
             raise ErrorExponenteInvalido("El exponente debe ser un número entero no negativo.")
+        if self.pasos is not None:
+            self.pasos.append(PasoCalculo("exponente", valor, None, None, int(valor)))
         return int(valor)
+
+    def registrar_entero(self, tipo, izquierdo, derecho, resultado):
+        if self.pasos is not None:
+            self.pasos.append(PasoCalculo(tipo, izquierdo, derecho, None, resultado))
+        return resultado
 
     def calcular_entero(self, nodo: Nodo) -> Fraction:
         if nodo.operador == "entero":
             return Fraction(nodo.valor)
         izquierdo = self.calcular_entero(nodo.izquierdo)
         if nodo.operador == "negativo":
-            return -izquierdo
+            return self.registrar_entero("negativo", izquierdo, None, -izquierdo)
         if nodo.operador == "^":
-            return izquierdo ** self.exponente(nodo.derecho)
+            exponente = self.exponente(nodo.derecho)
+            return self.registrar_entero("elevar", izquierdo, exponente, izquierdo ** exponente)
         derecho = self.calcular_entero(nodo.derecho)
-        if nodo.operador == "+": return izquierdo + derecho
-        if nodo.operador == "-": return izquierdo - derecho
-        if nodo.operador == "*": return izquierdo * derecho
-        return izquierdo / derecho
+        if nodo.operador == "+":
+            return self.registrar_entero("sumar", izquierdo, derecho, izquierdo + derecho)
+        if nodo.operador == "-":
+            return self.registrar_entero("restar", izquierdo, derecho, izquierdo - derecho)
+        if nodo.operador == "*":
+            return self.registrar_entero("multiplicar", izquierdo, derecho, izquierdo * derecho)
+        return self.registrar_entero("dividir", izquierdo, derecho, izquierdo / derecho)
 
     def calcular(self, nodo: Nodo, aritmetica: AritmeticaModular) -> int:
         if nodo.operador == "entero":
