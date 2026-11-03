@@ -19,19 +19,32 @@ class VentanaCalculadora:
         panel = ttk.Frame(ventana, padding=20)
         panel.pack(fill="both", expand=True)
         ttk.Label(panel, text="Calculadora de Aritmética Modular", font=("Segoe UI", 17, "bold")).pack(pady=(0, 16))
-        ttk.Label(panel, text="Módulo primo p:").pack(anchor="w")
+        self.resultado = tk.StringVar(value="")
+        self.display_resultado = tk.Label(
+            panel, textvariable=self.resultado, font=("Segoe UI", 18),
+            background="#FAFBFC", foreground="#202830", anchor="e", justify="right",
+            padx=14, pady=14, highlightthickness=1, highlightbackground="#CDD3DA",
+            wraplength=470,
+        )
+        self.display_resultado.pack(fill="x", pady=(0, 14))
+        ttk.Label(panel, text="Módulo primo p:", font=("Segoe UI", 12)).pack(anchor="w")
         self.modulo = ttk.Entry(panel, textvariable=self.texto_modulo, font=("Segoe UI", 13))
         self.modulo.pack(fill="x", pady=(4, 12))
-        ttk.Label(panel, text="Expresión:").pack(anchor="w")
+        ttk.Label(panel, text="Expresión:", font=("Segoe UI", 12)).pack(anchor="w")
         self.expresion = ttk.Entry(panel, textvariable=self.texto_expresion, font=("Segoe UI", 16))
         self.expresion.pack(fill="x", pady=(4, 12))
         teclado = ttk.Frame(panel)
         teclado.pack(fill="x")
         crear_teclado(teclado, self.insertar, self.borrar, self.limpiar)
-        ttk.Button(panel, text="Calcular", command=self.calcular).pack(fill="x", pady=10, ipady=7)
-        self.resultado = tk.StringVar(value="Resultado: —")
-        ttk.Label(panel, textvariable=self.resultado, font=("Segoe UI", 13), wraplength=490).pack(fill="x", pady=8)
-        ttk.Button(panel, text="Instrucciones", command=lambda: messagebox.showinfo("Instrucciones", INSTRUCCIONES, parent=ventana)).pack(anchor="e")
+        marco_calcular = tk.Frame(panel, background="#0078D4", padx=1, pady=1)
+        marco_calcular.pack(fill="x", pady=10)
+        tk.Button(
+            marco_calcular, text="Calcular", command=self.calcular,
+            background="#CFE8FA", foreground="#20384B",
+            activebackground="#BDDDF4", activeforeground="#20384B",
+            relief="flat", borderwidth=1, font=("Segoe UI", 10),
+        ).pack(fill="x", ipady=7)
+        ttk.Button(panel, text="?", width=3, command=lambda: messagebox.showinfo("Instrucciones", INSTRUCCIONES, parent=ventana)).pack(anchor="e")
         self.boton_procedimiento = ttk.Button(panel, text="Ver procedimiento", state="disabled", command=self.ver_procedimiento)
         self.boton_procedimiento.pack(fill="x", pady=8)
         self.texto_modulo.trace_add("write", self.invalidar_procedimiento)
@@ -59,7 +72,7 @@ class VentanaCalculadora:
     def limpiar(self):
         self.invalidar_procedimiento()
         self.expresion.delete(0, tk.END)
-        self.resultado.set("Resultado: —")
+        self.resultado.set("")
         self.expresion.focus_set()
 
     def calcular(self):
@@ -68,11 +81,13 @@ class VentanaCalculadora:
             resultado = EvaluarExpresionModular().ejecutar(self.expresion.get(), self.modulo.get())
             self.evaluacion = resultado
             self.boton_procedimiento.configure(state="normal")
-            self.resultado.set(f"Resultado: {resultado.resultado} (módulo {self.modulo.get().strip()})")
+            self.resultado.set(f"{resultado.resultado} (módulo {self.modulo.get().strip()})")
         except ErrorCalculadora as error:
-            self.resultado.set(str(error))
+            self.resultado.set("")
+            messagebox.showerror("Error de cálculo", str(error), parent=self.ventana)
         except Exception:
-            self.resultado.set("No se pudo completar el cálculo. Revise la entrada.")
+            self.resultado.set("")
+            messagebox.showerror("Error de cálculo", "No se pudo completar el cálculo. Revise la entrada.", parent=self.ventana)
 
     def invalidar_procedimiento(self, *argumentos):
         self.evaluacion = None

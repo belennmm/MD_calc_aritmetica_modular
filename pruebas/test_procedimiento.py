@@ -82,3 +82,29 @@ class PruebasProcedimiento(unittest.TestCase):
         with patch.object(AritmeticaModular, 'dividir', side_effect=AssertionError('Reevaluación')):
             texto = FormatearProcedimiento().formatear(evaluacion)
         self.assertIn('Resultado final:\n1 (mod 7)',texto)
+
+    def test_presentacion_division_agrupada(self):
+        evaluacion = self.evaluar('33/3', 41)
+        texto = FormatearProcedimiento().formatear(evaluacion)
+        self.assertIn('1. División modular', texto)
+        self.assertNotIn('Multiplicación modular', texto)
+        self.assertNotIn('Inverso multiplicativo modular', texto)
+        self.assertIn('41 = 13(3) + 2', texto)
+        self.assertIn('1 = 3 - 2', texto)
+        self.assertIn('1 = 3 - (41 - 13(3))', texto)
+        self.assertIn('1 = 14(3) - 41', texto)
+        self.assertIn('3^(-1) ≡ 14 (mod 41)', texto)
+        self.assertNotIn('(0)', texto)
+        self.assertIn('≡ 33 * 14\n≡ 11 (mod 41)', texto)
+        self.assertEqual(FormatearProcedimiento().formatear(self.evaluar('1/2+3/4',7)).count('División modular'),2)
+
+    def test_congruencias_y_exponentes_visibles(self):
+        texto = FormatearProcedimiento().formatear(self.evaluar('6^2*3+1-2',41))
+        self.assertIn('6^2 ≡ 36 (mod 41)', texto)
+        self.assertIn('36 * 3 ≡ 26 (mod 41)', texto)
+        self.assertIn('26 + 1 ≡ 27 (mod 41)', texto)
+        self.assertIn('27 - 2 ≡ 25 (mod 41)', texto)
+        self.assertIn('Exponente utilizado: 2', texto)
+        for linea in texto.splitlines():
+            if '(mod ' in linea:
+                self.assertNotIn(' = ', linea)

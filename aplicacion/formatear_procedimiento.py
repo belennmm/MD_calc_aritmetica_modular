@@ -10,7 +10,19 @@ class FormatearProcedimiento:
                    "elevar": "Potencia", "dividir": "División", "inverso": "Inverso multiplicativo",
                    "negativo": "Signo negativo"}
         numero = 0
-        for paso in evaluacion.pasos:
+        indice = 0
+        while indice < len(evaluacion.pasos):
+            paso = evaluacion.pasos[indice]
+            indice += 1
+            if (paso.tipo == "inverso" and indice + 1 < len(evaluacion.pasos)
+                    and evaluacion.pasos[indice].tipo == "multiplicar"
+                    and evaluacion.pasos[indice + 1].tipo == "dividir"):
+                division = evaluacion.pasos[indice + 1]
+                numero += 1
+                contenido = self.formatear_inverso(paso) + "\n\n" + self.formatear_paso(division)
+                bloques.append(f"{numero}. División modular\n{contenido}")
+                indice += 2
+                continue
             if paso.tipo == "reduccion":
                 continue
             contenido = self.formatear_paso(paso)
@@ -32,8 +44,8 @@ class FormatearProcedimiento:
         if paso.tipo == "reduccion":
             return ""
         if paso.tipo == "dividir" and modulo is not None:
-            return (f"Entonces: {a} / {b} ≡ {a} * {paso.divisor_reducido}^(-1) "
-                    f"≡ {a} * {paso.inverso} ≡ {resultado} (mod {modulo})")
+            return (f"Entonces:\n{a} / {b}\n≡ {a} * {paso.divisor_reducido}^(-1)\n"
+                    f"≡ {a} * {paso.inverso}\n≡ {resultado} (mod {modulo})")
         signos = {"sumar": "+", "restar": "-", "multiplicar": "*", "dividir": "/", "elevar": "^"}
         if paso.tipo == "negativo":
             operacion = f"-({a})"
@@ -61,21 +73,37 @@ class FormatearProcedimiento:
         divisor, modulo = paso.divisor_reducido, paso.modulo
         lineas = [f"Se busca el inverso multiplicativo de {divisor} módulo {modulo}.",
                   "Algoritmo extendido de Euclides:"]
-        lineas.extend(f"{p.dividendo} = {p.cociente}({p.divisor}) + {p.resto}" for p in paso.pasos_euclides)
+        lineas.extend(f"{p.dividendo} = {p.cociente}({p.divisor}) + {p.resto}"
+                      for p in paso.pasos_euclides if p.resto != 0)
         lineas.append("Sustitución hacia atrás:")
         terminos = {1: 1}
-        lineas.append("1 = 1")
+        primera_sustitucion = True
         for division in reversed(paso.pasos_euclides):
-            if division.resto == 0 or division.resto not in terminos:
+            if division.resto == 0 or not terminos.get(division.resto):
                 continue
-            coeficiente = terminos.pop(division.resto)
-            if not coeficiente:
-                continue
-            sustitucion = f"({division.dividendo} - {division.cociente}({division.divisor}))"
-            resto = self.combinacion(terminos)
-            lineas.append(f"1 = ({resto}) + ({coeficiente}) * {sustitucion}")
+            coeficiente = terminos[division.resto]
+            if not primera_sustitucion:
+                producto = (str(division.divisor) if division.cociente == 1
+                            else f"{division.cociente}({division.divisor})")
+                sustitucion = f"({division.dividendo} - {producto})"
+                partes = []
+                for valor, factor in terminos.items():
+                    if not factor:
+                        continue
+                    if valor == division.resto:
+                        termino = sustitucion if abs(factor) == 1 else f"{abs(factor)}{sustitucion}"
+                    else:
+                        termino = str(valor) if abs(factor) == 1 else f"{abs(factor)}({valor})"
+                    signo = ("-" if factor < 0 else "") if not partes else (" - " if factor < 0 else " + ")
+                    partes.append(signo + termino)
+                lineas.append("1 = " + "".join(partes))
+            terminos.pop(division.resto)
             terminos[division.dividendo] = terminos.get(division.dividendo, 0) + coeficiente
             terminos[division.divisor] = terminos.get(division.divisor, 0) - coeficiente * division.cociente
             lineas.append("1 = " + self.combinacion(terminos))
-        lineas.append(f"Por tanto: {divisor}^(-1) ≡ {paso.coeficiente} ≡ {paso.inverso} (mod {modulo})")
+            primera_sustitucion = False
+        if primera_sustitucion:
+            lineas.append("1 = 1")
+        coeficiente_visible = f"{paso.coeficiente} ≡ " if paso.coeficiente != paso.inverso else ""
+        lineas.append(f"Por tanto:\n{divisor}^(-1) ≡ {coeficiente_visible}{paso.inverso} (mod {modulo})")
         return "\n".join(lineas)
